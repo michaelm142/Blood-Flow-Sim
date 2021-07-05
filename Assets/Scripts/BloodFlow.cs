@@ -11,6 +11,12 @@ public class BloodFlow : MonoBehaviour
     public GameObject BloodCellPrefab;
 
     /// <summary>
+    /// Arrow that shows the direction of blood flow
+    /// </summary>
+    public GameObject conePrefab;
+    private GameObject cone;
+
+    /// <summary>
     /// Collection of spawned blood cells
     /// </summary>
     private List<BloodCellData> bloodCells = new List<BloodCellData>();
@@ -46,9 +52,20 @@ public class BloodFlow : MonoBehaviour
     private float spawnTimer;
 
     /// <summary>
+    /// position of the cone on the blood flow
+    /// </summary>
+    private float conePosition;
+
+    private Vector3 previousConePosition;
+
+    /// <summary>
     /// The Curve component attached to this game object
     /// </summary>
     private BezierCurve curve;
+    /// <summary>
+    /// Renders the path the blood flow will take
+    /// </summary>
+    private LineRenderer line;
     #endregion
 
     #region Unity Functions 
@@ -57,7 +74,15 @@ public class BloodFlow : MonoBehaviour
     void Start()
     {
         spawnTimer = 0;
+
         curve = GetComponent<BezierCurve>();
+
+        cone = Instantiate(conePrefab);
+        previousConePosition = cone.transform.position;
+
+        line = gameObject.AddComponent<LineRenderer>();
+        line.material.color = cone.GetComponent<MeshRenderer>().material.color;
+        line.startWidth = line.endWidth = 0.1f;
     }
 
     // Update is called once per frame
@@ -74,6 +99,27 @@ public class BloodFlow : MonoBehaviour
 
         for (int i = 0; i < bloodCells.Count; i++)
             UpdateBloodCell(bloodCells[i]);
+
+        // update line
+        line.positionCount = curve.resolution * 10;
+        for (int i = 1; i <= line.positionCount; i++)
+        {
+            float w = i / (float)line.positionCount;
+            line.SetPosition(i - 1, curve.GetPointAt(w));
+        }
+        // update arrow
+        conePosition += Time.deltaTime * BloodSpeed;
+        float coneW = conePosition / MaxCellLifeTime;
+        if (Mathf.Abs(1.0f - coneW) < 0.1f || coneW > 1.0f)
+        {
+            coneW = 0.0f;
+            conePosition = 0.0f;
+        }
+        coneW = Mathf.Clamp01(coneW);
+        cone.transform.position = curve.GetPointAt(coneW);
+        Vector3 coneDirection = cone.transform.position - previousConePosition;
+        cone.transform.rotation = Quaternion.LookRotation(coneDirection, Vector3.up);
+        previousConePosition = cone.transform.position;
     }
 
     #endregion

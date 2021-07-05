@@ -83,7 +83,7 @@ public class BloodFlow : MonoBehaviour
     void UpdateBloodCell(BloodCellData bloodCell)
     {
         float t = bloodCell.LifeTime / MaxCellLifeTime;
-        if (Mathf.Abs(1.0f - t) < 0.1f)
+        if (Mathf.Abs(1.0f - t) < 0.1f || t > 1.0f)
             RemoveCell(bloodCell);
 
         bloodCell.transform.position = curve.GetPointAt(t) + bloodCell.flowOffset * FlowDiameter;
